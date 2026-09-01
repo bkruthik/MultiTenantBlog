@@ -1,0 +1,143 @@
+{% extends "posts/base.html" %}
+
+{% block title %}Edit Post &mdash; {{ tenant.name }}{% endblock %}
+
+{% block nav_tenant %}
+    <a href="{% url 'post_list' tenant_id=tenant.id %}"
+       class="text-xs font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg">
+        {{ tenant.name }}
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+    <!-- Breadcrumb -->
+    <nav class="flex items-center gap-2 text-xs font-medium text-gray-400">
+        <a href="{% url 'home' %}" class="hover:text-gray-600 transition-colors">Communities</a>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <a href="{% url 'post_list' tenant_id=tenant.id %}" class="hover:text-gray-600 transition-colors">{{ tenant.name }}</a>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <a href="{% url 'post_detail' tenant_id=tenant.id post_id=post.id %}" class="hover:text-gray-600 transition-colors truncate max-w-xs">{{ post.title }}</a>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-gray-600 font-semibold">Edit</span>
+    </nav>
+
+    <!-- Form card -->
+    <div class="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
+
+        <div class="px-6 sm:px-8 py-6 border-b border-gray-100 bg-gray-50/50">
+            <h1 class="text-xl font-bold text-gray-900">Edit Post</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Editing in <strong class="text-gray-700">{{ tenant.name }}</strong></p>
+        </div>
+
+        <form method="POST" class="px-6 sm:px-8 py-6 space-y-5" novalidate>
+            {% csrf_token %}
+
+            {% if error %}
+                <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <!-- Title -->
+            <div class="space-y-1.5">
+                <label for="title" class="block text-sm font-semibold text-gray-800">Title</label>
+                <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value="{{ post.title }}"
+                    required
+                    class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                >
+            </div>
+
+            <!-- Category (Smart Auto-detect or Custom) -->
+            <div class="p-4 bg-brand-50/40 rounded-2xl border border-brand-100 space-y-2">
+                <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-brand-900 uppercase tracking-wide">Category</label>
+                    <span class="text-[10px] bg-brand-600 text-white font-bold px-2 py-0.5 rounded">Current: {{ post.category }}</span>
+                </div>
+                <input
+                    type="text"
+                    name="custom_category"
+                    value="{{ post.category }}"
+                    placeholder="Enter custom category or leave as is"
+                    class="w-full px-3.5 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                {% if existing_categories %}
+                    <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span class="text-[11px] text-gray-400">Suggestions:</span>
+                        {% for cat in existing_categories %}
+                            <button type="button"
+                                onclick="document.getElementsByName('custom_category')[0].value='{{ cat }}'"
+                                class="text-[10px] bg-white hover:bg-brand-100 text-gray-700 px-2 py-0.5 rounded-lg border border-gray-200 transition-colors">
+                                {{ cat }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Content -->
+            <div class="space-y-1.5">
+                <label for="content" class="block text-sm font-semibold text-gray-800">Content</label>
+                <textarea
+                    id="content"
+                    name="content"
+                    rows="8"
+                    required
+                    class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition resize-y"
+                >{{ post.content }}</textarea>
+            </div>
+
+            <!-- Image URL -->
+            <div class="space-y-1.5">
+                <label for="image_url" class="block text-sm font-semibold text-gray-800">
+                    Image Link <span class="text-xs font-normal text-gray-400">(Optional)</span>
+                </label>
+                <input
+                    type="url"
+                    id="image_url"
+                    name="image_url"
+                    value="{{ post.image_url }}"
+                    placeholder="https://images.unsplash.com/..."
+                    class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                >
+            </div>
+
+            <!-- Video URL -->
+            <div class="space-y-1.5">
+                <label for="video_url" class="block text-sm font-semibold text-gray-800">
+                    Video Link <span class="text-xs font-normal text-gray-400">(Optional &bull; YouTube Link or Direct MP4)</span>
+                </label>
+                <input
+                    type="url"
+                    id="video_url"
+                    name="video_url"
+                    value="{{ post.video_url }}"
+                    placeholder="https://www.youtube.com/watch?v=..."
+                    class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                >
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                <a href="{% url 'post_detail' tenant_id=tenant.id post_id=post.id %}"
+                   class="text-sm font-semibold text-gray-500 hover:text-gray-700 transition-colors">
+                    Cancel
+                </a>
+                <button type="submit"
+                    class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-all shadow-xs hover:shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    Save Changes
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}

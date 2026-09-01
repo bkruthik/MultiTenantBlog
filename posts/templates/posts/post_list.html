@@ -1,0 +1,414 @@
+{% extends "posts/base.html" %}
+
+{% block title %}{{ tenant.name }} &mdash; Community Feed{% endblock %}
+
+{% block nav_tenant %}
+    <span class="text-xs font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg">
+        {{ tenant.name }}
+    </span>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+
+    <!-- ────────────────────── Community Header Banner ────────────────────── -->
+    <div class="bg-white rounded-3xl border border-gray-200 shadow-xs p-6 sm:p-8">
+        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-6">
+
+            <div class="space-y-2">
+                <!-- Breadcrumbs -->
+                <div class="flex items-center gap-2 text-xs font-medium text-gray-400">
+                    <a href="{% url 'home' %}" class="hover:text-gray-600 transition-colors">Dashboard</a>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    <a href="{% url 'explore' %}" class="hover:text-gray-600 transition-colors">Communities</a>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                    <span class="text-gray-700 font-semibold">{{ tenant.name }}</span>
+                </div>
+
+                <div class="flex items-center gap-3 pt-1">
+                    {% if tenant.avatar_url %}
+                        <img src="{{ tenant.avatar_url }}" alt="{{ tenant.name }}" class="w-12 h-12 rounded-2xl object-cover shadow-xs" onerror="this.style.display='none'">
+                    {% elif tenant.avatar_emoji %}
+                        <div class="w-12 h-12 rounded-2xl bg-brand-50 text-2xl flex items-center justify-center shadow-xs">
+                            {{ tenant.avatar_emoji }}
+                        </div>
+                    {% else %}
+                        <div class="w-12 h-12 rounded-2xl bg-brand-600 text-white font-extrabold text-xl flex items-center justify-center uppercase shadow-xs">
+                            {{ tenant.name|first }}
+                        </div>
+                    {% endif %}
+                    <div>
+                        <div class="flex items-center gap-2">
+                            <h1 class="text-2xl sm:text-3xl font-extrabold text-gray-900 tracking-tight">{{ tenant.name }}</h1>
+                            <span class="text-[11px] bg-brand-50 text-brand-700 font-bold px-2 py-0.5 rounded-full uppercase">
+                                {{ tenant.category }}
+                            </span>
+                            {% if tenant.is_private %}
+                                <span class="inline-flex items-center gap-1 text-xs font-semibold bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5">
+                                    <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                    Private
+                                </span>
+                            {% else %}
+                                <span class="inline-flex items-center gap-1 text-xs font-semibold bg-green-50 text-green-700 rounded-full px-2.5 py-0.5">
+                                    <svg class="w-3 h-3 text-green-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/></svg>
+                                    Public
+                                </span>
+                            {% endif %}
+                        </div>
+
+                        <div class="flex items-center gap-3 text-xs text-gray-400 mt-1">
+                            <a href="{% url 'tenant_members' tenant_id=tenant.id %}" class="hover:text-brand-600 font-semibold underline decoration-dotted">
+                                <strong>{{ member_count }}</strong> members
+                            </a>
+                            {% if admin_user %}
+                                <span>&bull; Admin: <strong class="text-gray-700">@{{ admin_user.username }}</strong></span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                {% if tenant.description %}
+                    <p class="text-sm text-gray-500 max-w-2xl pt-1 leading-relaxed">{{ tenant.description }}</p>
+                {% endif %}
+            </div>
+
+            <!-- Action Buttons: Join, Leave, New Post, Role, Members -->
+            <div class="flex flex-wrap items-center gap-2.5">
+                <a href="{% url 'tenant_members' tenant_id=tenant.id %}"
+                   class="inline-flex items-center gap-1 text-xs font-semibold text-gray-600 bg-gray-50 hover:bg-gray-100 border border-gray-200 px-3 py-2 rounded-xl transition-colors">
+                    <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    Members ({{ member_count }})
+                </a>
+
+                {% if membership %}
+                    <span class="inline-flex items-center text-xs font-bold rounded-xl px-3 py-2
+                        {% if membership.role == 'ADMIN' %}bg-brand-100 text-brand-800
+                        {% elif membership.role == 'EDITOR' %}bg-purple-100 text-purple-800
+                        {% else %}bg-gray-100 text-gray-700{% endif %}">
+                        Role: {{ membership.role }}
+                    </span>
+
+                    {% if membership.role == 'ADMIN' or membership.role == 'EDITOR' %}
+                        <a href="{% url 'post' tenant_id=tenant.id %}"
+                           class="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl transition-all shadow-xs hover:shadow-sm">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                            </svg>
+                            New Post
+                        </a>
+                    {% endif %}
+
+                    <!-- Leave Button -->
+                    <form method="POST" action="{% url 'tenant_leave' tenant_id=tenant.id %}" class="inline"
+                          onsubmit="return confirm('Are you sure you want to leave {{ tenant.name }}?');">
+                        {% csrf_token %}
+                        <button type="submit"
+                            class="text-xs text-gray-400 hover:text-red-600 font-semibold px-2 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                            title="Leave community">
+                            Leave
+                        </button>
+                    </form>
+
+                    <!-- Report Community -->
+                    <a href="{% url 'report_community' tenant_id=tenant.id %}"
+                       class="text-xs text-gray-300 hover:text-red-500 font-semibold px-2 py-2 rounded-lg hover:bg-red-50 transition-colors"
+                       title="Report this community">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                        </svg>
+                    </a>
+                {% else %}
+                    {% if not tenant.is_private %}
+                        <form method="POST" action="{% url 'tenant_join' tenant_id=tenant.id %}" class="inline">
+                            {% csrf_token %}
+                            <button type="submit"
+                                class="inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl transition-all shadow-xs hover:shadow-sm">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+                                Join Community
+                            </button>
+                        </form>
+                    {% endif %}
+                {% endif %}
+            </div>
+
+        </div>
+
+        <!-- ────────────────────── Category Filter Pills & Search ────────────────────── -->
+        <div class="mt-6 pt-5 border-t border-gray-100 space-y-3">
+            <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
+                <span class="text-gray-400 mr-1">Filter:</span>
+                <a href="{% url 'post_list' tenant_id=tenant.id %}{% if search_query %}?q={{ search_query }}{% endif %}"
+                   class="px-3 py-1.5 rounded-xl transition-colors {% if not category_filter %}bg-brand-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    All Topics
+                </a>
+                {% for cat in categories %}
+                    <a href="{% url 'post_list' tenant_id=tenant.id %}?category={{ cat }}{% if search_query %}&q={{ search_query }}{% endif %}"
+                       class="px-3 py-1.5 rounded-xl transition-colors whitespace-nowrap {% if category_filter == cat %}bg-brand-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                        {{ cat }}
+                    </a>
+                {% endfor %}
+            </div>
+
+            <!-- In-feed Search -->
+            <form method="GET" action="{% url 'post_list' tenant_id=tenant.id %}" class="flex items-center gap-2">
+                {% if category_filter %}
+                    <input type="hidden" name="category" value="{{ category_filter }}">
+                {% endif %}
+                <div class="relative flex-1">
+                    <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                        </svg>
+                    </div>
+                    <input
+                        type="text"
+                        name="q"
+                        value="{{ search_query }}"
+                        placeholder="Search posts in {{ tenant.name }}…"
+                        class="w-full pl-10 pr-4 py-2 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                    >
+                </div>
+                <button type="submit"
+                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold px-4 py-2 rounded-xl transition-colors">
+                    Search
+                </button>
+                {% if search_query %}
+                    <a href="{% url 'post_list' tenant_id=tenant.id %}{% if category_filter %}?category={{ category_filter }}{% endif %}"
+                       class="text-xs font-semibold text-gray-500 hover:text-red-600 px-2 py-2 transition-colors">
+                        Clear
+                    </a>
+                {% endif %}
+            </form>
+        </div>
+
+    </div>
+
+    <!-- ────────────────────── Main Layout: Posts Feed & Crew Chat ────────────────────── -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
+
+        <!-- ── Left 2 Columns: Community Posts Feed ── -->
+        <div class="lg:col-span-2 space-y-4">
+            <div class="flex items-center justify-between px-1">
+                <h2 class="text-lg font-bold text-gray-900">Community Posts ({{ posts|length }})</h2>
+                {% if category_filter %}
+                    <span class="text-xs bg-brand-50 text-brand-700 font-bold px-2 py-0.5 rounded">Category: {{ category_filter }}</span>
+                {% endif %}
+            </div>
+
+            {% if posts %}
+                <div class="space-y-4">
+                    {% for p in posts %}
+                        <article class="bg-white rounded-3xl border border-gray-200 shadow-xs hover:shadow-md transition-shadow p-6 space-y-4">
+
+                            <!-- Author Header -->
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-3">
+                                    <a href="{% url 'user_profile' username=p.author.username %}"
+                                       class="shrink-0 hover:ring-2 hover:ring-brand-400 rounded-full transition-all">
+                                        {% if p.author.profile.avatar_url %}
+                                            <img src="{{ p.author.profile.avatar_url }}" alt="{{ p.author.username }}" class="w-9 h-9 rounded-full object-cover shadow-xs border border-gray-200" onerror="this.style.display='none'">
+                                        {% else %}
+                                            <div class="w-9 h-9 rounded-full bg-brand-100 text-brand-700 font-bold text-sm flex items-center justify-center uppercase">
+                                                {{ p.author.username|first }}
+                                            </div>
+                                        {% endif %}
+                                    </a>
+                                    <div>
+                                        <div class="flex items-center gap-2">
+                                            <a href="{% url 'user_profile' username=p.author.username %}"
+                                               class="font-semibold text-sm text-gray-900 hover:text-brand-600 transition-colors">
+                                                {{ p.author.username }}
+                                            </a>
+                                            <span class="text-[10px] bg-gray-100 text-gray-600 font-semibold px-2 py-0.2 rounded">{{ p.category }}</span>
+                                        </div>
+                                        <p class="text-xs text-gray-400">{{ p.created_at|date:"N j, Y &bull; g:i A" }}</p>
+                                    </div>
+                                </div>
+
+                                <!-- Management buttons -->
+                                {% if membership %}
+                                    <div class="flex items-center gap-1">
+                                        {% if membership.role == 'ADMIN' or membership.role == 'EDITOR' %}
+                                            <a href="{% url 'post_edit' tenant_id=tenant.id post_id=p.id %}"
+                                               class="text-xs text-gray-400 hover:text-purple-600 p-1.5 rounded-lg hover:bg-purple-50 transition-colors" title="Edit Post">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+
+                                        {% if membership.role == 'ADMIN' %}
+                                            <a href="{% url 'post_delete' tenant_id=tenant.id post_id=p.id %}"
+                                               class="text-xs text-gray-400 hover:text-red-600 p-1.5 rounded-lg hover:bg-red-50 transition-colors" title="Delete Post">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                                </svg>
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+
+                            <!-- Post Media Thumbnail (if image present) -->
+                            {% if p.image_url %}
+                                <a href="{% url 'post_detail' tenant_id=tenant.id post_id=p.id %}" class="block overflow-hidden rounded-2xl">
+                                    <img
+                                        src="{{ p.image_url }}"
+                                        alt="{{ p.title }}"
+                                        class="w-full max-h-64 object-cover rounded-2xl hover:scale-[1.01] transition-transform"
+                                        loading="lazy"
+                                        onerror="this.style.display='none'"
+                                    >
+                                </a>
+                            {% endif %}
+
+                            <!-- Post Content -->
+                            <div>
+                                <a href="{% url 'post_detail' tenant_id=tenant.id post_id=p.id %}" class="block group">
+                                    <div class="flex items-center gap-2">
+                                        <h3 class="text-xl font-bold text-gray-900 group-hover:text-brand-600 transition-colors leading-snug">
+                                            {{ p.title }}
+                                        </h3>
+                                        {% if p.video_url %}
+                                            <span class="text-[10px] bg-red-50 text-red-600 font-bold px-1.5 py-0.5 rounded">Video</span>
+                                        {% endif %}
+                                        {% if p.poll %}
+                                            <span class="text-[10px] bg-brand-50 text-brand-600 font-bold px-1.5 py-0.5 rounded">Poll</span>
+                                        {% endif %}
+                                    </div>
+                                    <p class="mt-2 text-sm text-gray-600 leading-relaxed line-clamp-3">
+                                        {{ p.content }}
+                                    </p>
+                                </a>
+                            </div>
+
+                            <!-- Interaction Bar -->
+                            <div class="pt-3 border-t border-gray-100 flex items-center justify-between text-sm">
+                                <div class="flex items-center gap-3">
+
+                                    <!-- Like Toggle -->
+                                    <form method="POST" action="{% url 'post_like' tenant_id=tenant.id post_id=p.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <input type="hidden" name="next" value="{{ request.get_full_path }}">
+                                        <button type="submit"
+                                            class="flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1.5 rounded-lg transition-colors
+                                            {% if p.is_liked %}text-red-600 bg-red-50 hover:bg-red-100{% else %}text-gray-500 hover:text-red-600 hover:bg-gray-50{% endif %}">
+                                            {% if p.is_liked %}
+                                                <svg class="w-4 h-4 fill-current text-red-500" viewBox="0 0 24 24">
+                                                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                                                </svg>
+                                            {% else %}
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+                                                </svg>
+                                            {% endif %}
+                                            <span>{{ p.like_count }}</span>
+                                        </button>
+                                    </form>
+
+                                    <!-- Comment Counter -->
+                                    <a href="{% url 'post_detail' tenant_id=tenant.id post_id=p.id %}#comments"
+                                       class="flex items-center gap-1.5 text-xs font-medium text-gray-500 hover:text-brand-600 px-2.5 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/>
+                                        </svg>
+                                        <span>{{ p.comment_count }} comments</span>
+                                    </a>
+
+                                </div>
+
+                                <a href="{% url 'post_detail' tenant_id=tenant.id post_id=p.id %}"
+                                   class="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-800 transition-colors">
+                                    Read Post &rarr;
+                                </a>
+                            </div>
+
+                        </article>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="bg-white rounded-3xl border border-dashed border-gray-300 p-12 text-center">
+                    <p class="text-base font-bold text-gray-800">No posts found</p>
+                    {% if category_filter or search_query %}
+                        <p class="text-sm text-gray-500 mt-1">No results matching your filters.</p>
+                    {% else %}
+                        <p class="text-sm text-gray-500 mt-1">Be the first to create a post in this community.</p>
+                        {% if membership and membership.role != 'VIEWER' %}
+                            <a href="{% url 'post' tenant_id=tenant.id %}" class="mt-4 inline-flex items-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-colors">
+                                + Create First Post
+                            </a>
+                        {% endif %}
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- ── Right Column: Crew Chat Lounge ── -->
+        <div id="crew-chat" class="bg-white rounded-3xl border border-gray-200 shadow-xs p-6 space-y-4 sticky top-24">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse"></div>
+                    <h3 class="font-bold text-gray-900 text-base">Crew Chat</h3>
+                </div>
+                <span class="text-xs text-gray-400 font-medium">Live Board</span>
+            </div>
+
+            <!-- Chat Message Box List -->
+            <div class="space-y-3 max-h-96 overflow-y-auto pr-1 text-xs">
+                {% if chat_messages %}
+                    {% for msg in chat_messages %}
+                        <div class="bg-gray-50 rounded-2xl p-3 space-y-1">
+                            <div class="flex items-center justify-between">
+                                <div class="flex items-center gap-1.5">
+                                    {% if msg.author.profile.avatar_url %}
+                                        <img src="{{ msg.author.profile.avatar_url }}" alt="{{ msg.author.username }}" class="w-4 h-4 rounded-full object-cover" onerror="this.style.display='none'">
+                                    {% endif %}
+                                    <a href="{% url 'user_profile' username=msg.author.username %}" class="font-bold text-gray-900 hover:text-brand-600">
+                                        {{ msg.author.username }}
+                                    </a>
+                                </div>
+                                <span class="text-[10px] text-gray-400">{{ msg.created_at|date:"g:i A" }}</span>
+                            </div>
+                            <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">{{ msg.message }}</p>
+                        </div>
+                    {% endfor %}
+                {% else %}
+                    <p class="text-center text-gray-400 py-6">
+                        No crew messages yet. Drop a message to say hello!
+                    </p>
+                {% endif %}
+            </div>
+
+            <!-- Chat Input Form -->
+            {% if membership or not tenant.is_private %}
+                <form method="POST" action="{% url 'tenant_chat_post' tenant_id=tenant.id %}" class="space-y-2 pt-2 border-t border-gray-100">
+                    {% csrf_token %}
+                    <textarea
+                        name="message"
+                        rows="2"
+                        placeholder="Message the crew in {{ tenant.name }}…"
+                        required
+                        class="w-full px-3 py-2 text-xs bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition resize-none"
+                    ></textarea>
+                    <button type="submit"
+                        class="w-full inline-flex items-center justify-center gap-1.5 bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold py-2 rounded-xl transition-colors shadow-xs">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5"/>
+                        </svg>
+                        Send Message
+                    </button>
+                </form>
+            {% else %}
+                <p class="text-xs text-gray-400 text-center pt-2 border-t border-gray-100">
+                    Join this community to participate in Crew Chat.
+                </p>
+            {% endif %}
+
+        </div>
+
+    </div>
+
+</div>
+{% endblock %}

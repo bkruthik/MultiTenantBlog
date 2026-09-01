@@ -1,0 +1,228 @@
+{% extends "posts/base.html" %}
+
+{% block title %}{{ profile_user.username }}'s Profile &mdash; TenantBlog{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto space-y-8">
+
+    <!-- ────────────────────── Profile Header Card ────────────────────── -->
+    <div class="bg-white rounded-3xl border border-gray-200 shadow-xs p-6 sm:p-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-6">
+
+            <div class="flex items-center gap-4">
+                {% if profile_user.profile.avatar_url %}
+                    <img src="{{ profile_user.profile.avatar_url }}" alt="{{ profile_user.username }}" class="w-16 h-16 rounded-2xl object-cover shadow-sm border border-gray-200" onerror="this.style.display='none'">
+                {% else %}
+                    <div class="w-16 h-16 rounded-2xl bg-brand-600 text-white font-bold text-2xl flex items-center justify-center uppercase shadow-sm">
+                        {{ profile_user.username|first }}
+                    </div>
+                {% endif %}
+                <div>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-2xl font-bold text-gray-900">{{ profile_user.username }}</h1>
+                        {% if is_own_profile %}
+                            <span class="text-xs bg-brand-50 text-brand-700 font-semibold px-2.5 py-0.5 rounded-full">You</span>
+                        {% endif %}
+                    </div>
+                    {% if profile_user.profile.bio %}
+                        <p class="text-xs text-gray-600 mt-1 max-w-sm">{{ profile_user.profile.bio }}</p>
+                    {% endif %}
+                    <p class="text-xs text-gray-400 mt-1">
+                        Member since {{ profile_user.date_joined|date:"F Y" }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="grid grid-cols-3 gap-3 border-t sm:border-t-0 sm:border-l border-gray-100 pt-4 sm:pt-0 sm:pl-6 text-center">
+                <div class="px-2">
+                    <p class="text-xl font-bold text-gray-900">{{ memberships|length }}</p>
+                    <p class="text-xs text-gray-400 font-medium">Communities</p>
+                </div>
+                <div class="px-2">
+                    <p class="text-xl font-bold text-gray-900">{{ total_posts_count }}</p>
+                    <p class="text-xs text-gray-400 font-medium">Posts</p>
+                </div>
+                <div class="px-2">
+                    <p class="text-xl font-bold text-gray-900">{{ total_comments_count }}</p>
+                    <p class="text-xs text-gray-400 font-medium">Comments</p>
+                </div>
+            </div>
+
+        </div>
+
+        {% if is_own_profile %}
+            <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+                <p class="text-xs text-gray-400">Personalize your avatar and bio.</p>
+                <button type="button"
+                    onclick="document.getElementById('edit-profile-box').classList.toggle('hidden')"
+                    class="inline-flex items-center gap-1.5 text-xs font-semibold text-brand-600 hover:text-brand-800 bg-brand-50 hover:bg-brand-100 px-3 py-1.5 rounded-xl border border-brand-200 transition-colors">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Edit Photo &amp; Bio
+                </button>
+            </div>
+
+            <!-- Hidden Profile Editor -->
+            <form id="edit-profile-box" method="POST" class="hidden mt-4 p-5 bg-gray-50 rounded-2xl border border-gray-200 space-y-3">
+                {% csrf_token %}
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-gray-700 uppercase">Profile Photo / Avatar URL</label>
+                    <input
+                        type="url"
+                        name="avatar_url"
+                        value="{{ profile_user.profile.avatar_url|default:'' }}"
+                        placeholder="https://images.unsplash.com/... or any image link"
+                        class="w-full px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                    >
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-xs font-bold text-gray-700 uppercase">Bio / About You</label>
+                    <textarea
+                        name="bio"
+                        rows="2"
+                        placeholder="Tell the community what you are learning or building…"
+                        class="w-full px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500 resize-none"
+                    >{{ profile_user.profile.bio|default:'' }}</textarea>
+                </div>
+                <div class="flex justify-end gap-2 pt-1">
+                    <button type="button" onclick="document.getElementById('edit-profile-box').classList.add('hidden')" class="text-xs text-gray-500 hover:text-gray-700 font-semibold px-3 py-1.5">Cancel</button>
+                    <button type="submit" class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-1.5 rounded-xl transition-colors shadow-xs">Save Profile</button>
+                </div>
+            </form>
+        {% elif not is_own_profile %}
+            <div class="pt-4 border-t border-gray-100 flex justify-end">
+                <a href="{% url 'report_user' username=profile_user.username %}"
+                   class="inline-flex items-center gap-1.5 text-xs font-semibold text-gray-400 hover:text-red-600 hover:bg-red-50 border border-transparent hover:border-red-200 px-3 py-1.5 rounded-xl transition-all">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M3 21v-4m0 0V5a2 2 0 012-2h6.5l1 1H21l-3 6 3 6H8.5l-1-1H5a2 2 0 00-2 2zm9-13.5V9"/>
+                    </svg>
+                    Report User
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- ────────────────────── Mutual Communities (Shared with you) ────────────────────── -->
+    {% if not is_own_profile and mutual_memberships %}
+        <div class="bg-brand-50/50 rounded-3xl border border-brand-200 p-6 space-y-4">
+            <div class="flex items-center gap-2 text-brand-900 font-bold text-base">
+                <svg class="w-5 h-5 text-brand-600" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/>
+                </svg>
+                <span>Mutual Communities with {{ profile_user.username }} ({{ mutual_memberships|length }})</span>
+            </div>
+            <p class="text-xs text-brand-700">You and {{ profile_user.username }} are both members of these communities:</p>
+
+            <div class="grid gap-3 sm:grid-cols-2 md:grid-cols-3">
+                {% for m in mutual_memberships %}
+                    <div class="bg-white rounded-2xl border border-brand-100 p-4 shadow-xs flex items-center justify-between">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-xl bg-brand-100 text-brand-700 font-bold text-xs flex items-center justify-center uppercase">
+                                {{ m.tenant.name|first }}
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-gray-900 text-xs">{{ m.tenant.name }}</h4>
+                                <span class="text-[10px] text-gray-400">Role: {{ m.role }}</span>
+                            </div>
+                        </div>
+                        <a href="{% url 'post_list' tenant_id=m.tenant.id %}" class="text-xs font-semibold text-brand-600 hover:text-brand-800">
+                            Feed &rarr;
+                        </a>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+
+    <!-- ────────────────────── All Communities ────────────────────── -->
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-gray-900">
+                {% if is_own_profile %}Your Communities{% else %}Communities Joined{% endif %}
+            </h2>
+            <span class="text-xs font-semibold text-gray-400">{{ memberships|length }} total</span>
+        </div>
+
+        {% if memberships %}
+            <div class="grid gap-4 sm:grid-cols-2 md:grid-cols-3">
+                {% for m in memberships %}
+                    <div class="bg-white rounded-2xl border border-gray-200 shadow-xs p-4 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-start justify-between gap-2">
+                                <h3 class="font-bold text-gray-900 text-sm leading-snug">{{ m.tenant.name }}</h3>
+                                <span class="text-[10px] font-bold px-2 py-0.5 rounded-full
+                                    {% if m.role == 'ADMIN' %}bg-brand-100 text-brand-800
+                                    {% elif m.role == 'EDITOR' %}bg-purple-100 text-purple-800
+                                    {% else %}bg-gray-100 text-gray-700{% endif %}">
+                                    {{ m.role }}
+                                </span>
+                            </div>
+                            {% if m.tenant.description %}
+                                <p class="text-xs text-gray-500 mt-1 line-clamp-2 leading-relaxed">{{ m.tenant.description }}</p>
+                            {% endif %}
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
+                            <span class="text-[11px] text-gray-400">
+                                {% if m.tenant.is_private %}Private{% else %}Public{% endif %}
+                            </span>
+                            <a href="{% url 'post_list' tenant_id=m.tenant.id %}"
+                               class="text-xs font-semibold text-brand-600 hover:text-brand-800">
+                                View Feed &rarr;
+                            </a>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 text-center text-sm text-gray-400">
+                Not a member of any community.
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- ────────────────────── User's Posts ────────────────────── -->
+    <div class="space-y-4">
+        <div class="flex items-center justify-between">
+            <h2 class="text-lg font-bold text-gray-900">Recent Posts by {{ profile_user.username }}</h2>
+            <span class="text-xs font-semibold text-gray-400">{{ posts|length }} visible</span>
+        </div>
+
+        {% if posts %}
+            <div class="space-y-3">
+                {% for p in posts %}
+                    <article class="bg-white rounded-2xl border border-gray-200 shadow-xs p-5 hover:shadow-sm transition-shadow">
+                        <div class="flex items-start justify-between gap-3">
+                            <div class="space-y-1">
+                                <span class="text-xs font-semibold text-brand-700 bg-brand-50 px-2 py-0.5 rounded">
+                                    {{ p.tenant.name }}
+                                </span>
+                                <h3 class="font-bold text-base text-gray-900 hover:text-brand-600 transition-colors pt-1">
+                                    <a href="{% url 'post_detail' tenant_id=p.tenant.id post_id=p.id %}">
+                                        {{ p.title }}
+                                    </a>
+                                </h3>
+                                <p class="text-xs text-gray-400">
+                                    Published {{ p.created_at|date:"N j, Y" }} &bull; {{ p.likes.count }} likes &bull; {{ p.comments.count }} comments
+                                </p>
+                            </div>
+
+                            <a href="{% url 'post_detail' tenant_id=p.tenant.id post_id=p.id %}"
+                               class="text-xs font-semibold text-gray-500 hover:text-brand-600 px-2.5 py-1.5 rounded-lg hover:bg-gray-50 transition-colors shrink-0">
+                                Open Post &rarr;
+                            </a>
+                        </div>
+                    </article>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-2xl border border-gray-200 p-6 text-center text-sm text-gray-400">
+                No visible posts from this user.
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,193 @@
+{% extends "posts/base.html" %}
+
+{% block title %}Explore Communities &mdash; TenantBlog{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+
+    <!-- ────────────────────── Hero / Discover Header ────────────────────── -->
+    <div class="bg-white rounded-3xl border border-gray-200 shadow-xs p-6 sm:p-10 space-y-6">
+        <div class="max-w-2xl">
+            <div class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-brand-50 text-brand-700 mb-3">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                </svg>
+                Explore &amp; Join Communities
+            </div>
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-gray-900 tracking-tight">
+                Discover Your Communities
+            </h1>
+            <p class="text-sm text-gray-500 mt-2 leading-relaxed">
+                Join study groups, tech clubs, coding challenges, and interest hubs. Find open public communities or create your own custom space.
+            </p>
+        </div>
+
+        <!-- Category Pills Filter -->
+        <div class="flex items-center gap-2 overflow-x-auto pb-1 text-xs font-semibold">
+            <span class="text-gray-400 mr-1">Categories:</span>
+            <a href="{% url 'explore' %}{% if search_query %}?q={{ search_query }}{% endif %}"
+               class="px-3.5 py-1.5 rounded-xl transition-colors {% if not category_filter %}bg-brand-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                All
+            </a>
+            {% for cat in categories %}
+                <a href="{% url 'explore' %}?category={{ cat }}{% if search_query %}&q={{ search_query }}{% endif %}"
+                   class="px-3.5 py-1.5 rounded-xl transition-colors whitespace-nowrap {% if category_filter == cat %}bg-brand-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+                    {{ cat }}
+                </a>
+            {% endfor %}
+        </div>
+
+        <!-- Search Bar -->
+        <form method="GET" action="{% url 'explore' %}" class="flex gap-2 max-w-xl">
+            {% if category_filter %}
+                <input type="hidden" name="category" value="{{ category_filter }}">
+            {% endif %}
+            <div class="relative flex-1">
+                <div class="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-gray-400">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+                    </svg>
+                </div>
+                <input
+                    type="text"
+                    name="q"
+                    value="{{ search_query }}"
+                    placeholder="Search by keyword, topic, sports, tech, or name…"
+                    class="w-full pl-10 pr-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                >
+            </div>
+            <button type="submit"
+                class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-semibold px-5 py-2.5 rounded-xl transition-colors shadow-xs">
+                Search
+            </button>
+            {% if search_query %}
+                <a href="{% url 'explore' %}{% if category_filter %}?category={{ category_filter }}{% endif %}"
+                   class="text-xs font-semibold text-gray-500 hover:text-red-600 px-2 py-2.5 transition-colors">
+                    Clear
+                </a>
+            {% endif %}
+        </form>
+    </div>
+
+    <!-- ────────────────────── Communities Grid ────────────────────── -->
+    <div class="space-y-4">
+        <div class="flex items-center justify-between px-1">
+            <h2 class="text-lg font-bold text-gray-900">
+                {% if search_query %}Search Results for &ldquo;{{ search_query }}&rdquo;{% elif category_filter %}{{ category_filter }} Communities{% else %}All Communities{% endif %}
+                <span class="text-xs font-normal text-gray-500 ml-1">({{ tenants_data|length }})</span>
+            </h2>
+            <a href="{% url 'tenant_create' %}" class="inline-flex items-center gap-1 text-xs font-bold text-brand-600 hover:text-brand-800">
+                + Create New Community
+            </a>
+        </div>
+
+        {% if tenants_data %}
+            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {% for item in tenants_data %}
+                    <div class="bg-white rounded-3xl border border-gray-200 shadow-xs hover:shadow-md transition-all p-6 flex flex-col justify-between space-y-4 group">
+
+                        <div class="space-y-3">
+                            <!-- Community Avatar & Privacy Tag -->
+                            <div class="flex items-center justify-between">
+                                {% if item.tenant.avatar_url %}
+                                    <img src="{{ item.tenant.avatar_url }}" alt="{{ item.tenant.name }}" class="w-12 h-12 rounded-2xl object-cover shadow-xs group-hover:scale-105 transition-transform" onerror="this.style.display='none'">
+                                {% elif item.tenant.avatar_emoji %}
+                                    <div class="w-12 h-12 rounded-2xl bg-brand-50 text-2xl flex items-center justify-center shadow-xs group-hover:scale-105 transition-transform">
+                                        {{ item.tenant.avatar_emoji }}
+                                    </div>
+                                {% else %}
+                                    <div class="w-12 h-12 rounded-2xl bg-brand-600 text-white font-extrabold text-xl flex items-center justify-center uppercase shadow-xs group-hover:scale-105 transition-transform">
+                                        {{ item.tenant.name|first }}
+                                    </div>
+                                {% endif %}
+                                <div class="flex items-center gap-1.5">
+                                    <span class="text-[10px] bg-brand-50 text-brand-700 font-bold px-2 py-0.5 rounded-full uppercase">
+                                        {{ item.tenant.category }}
+                                    </span>
+                                    {% if item.tenant.is_private %}
+                                        <span class="inline-flex items-center gap-1 text-xs font-semibold bg-gray-100 text-gray-700 rounded-full px-2.5 py-0.5">
+                                            <svg class="w-3 h-3 text-gray-500" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                            Private
+                                        </span>
+                                    {% else %}
+                                        <span class="inline-flex items-center gap-1 text-xs font-semibold bg-green-50 text-green-700 rounded-full px-2.5 py-0.5">
+                                            <svg class="w-3 h-3" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064"/></svg>
+                                            Public
+                                        </span>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <!-- Name & Description -->
+                            <div>
+                                <h3 class="text-lg font-bold text-gray-900 group-hover:text-brand-600 transition-colors">
+                                    {{ item.tenant.name }}
+                                </h3>
+                                {% if item.tenant.description %}
+                                    <p class="text-xs text-gray-500 mt-1.5 leading-relaxed line-clamp-3">
+                                        {{ item.tenant.description }}
+                                    </p>
+                                {% endif %}
+                            </div>
+
+                            <!-- Stats -->
+                            <div class="pt-2 flex items-center gap-3 text-xs text-gray-400">
+                                <span><strong>{{ item.member_count }}</strong> members</span>
+                                <span>&bull;</span>
+                                <span><strong>{{ item.posts_count }}</strong> posts</span>
+                                {% if item.admin_user %}
+                                    <span>&bull;</span>
+                                    <span>Admin: <strong class="text-gray-700">@{{ item.admin_user.username }}</strong></span>
+                                {% endif %}
+                            </div>
+                        </div>
+
+                        <!-- Action Button: Join / View Feed / Locked -->
+                        <div class="pt-4 border-t border-gray-100 flex items-center justify-between">
+                            {% if item.is_member %}
+                                <span class="text-xs font-semibold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg">
+                                    Member ({{ item.user_role }})
+                                </span>
+                                <a href="{% url 'post_list' tenant_id=item.tenant.id %}"
+                                   class="text-xs font-bold text-brand-600 hover:text-brand-800 transition-colors">
+                                    Open Feed &rarr;
+                                </a>
+                            {% else %}
+                                {% if item.tenant.is_private %}
+                                    <span class="text-xs text-gray-400 font-medium flex items-center gap-1">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                                        Private Group
+                                    </span>
+                                    <span class="text-xs text-gray-400 font-medium italic">Invite Only</span>
+                                {% else %}
+                                    <a href="{% url 'post_list' tenant_id=item.tenant.id %}"
+                                       class="text-xs font-semibold text-gray-600 hover:text-gray-900 transition-colors">
+                                        Preview
+                                    </a>
+                                    <form method="POST" action="{% url 'tenant_join' tenant_id=item.tenant.id %}" class="inline">
+                                        {% csrf_token %}
+                                        <button type="submit"
+                                            class="bg-brand-600 hover:bg-brand-700 text-white text-xs font-bold px-4 py-2 rounded-xl transition-all shadow-xs hover:shadow-sm">
+                                            + Join Community
+                                        </button>
+                                    </form>
+                                {% endif %}
+                            {% endif %}
+                        </div>
+
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="bg-white rounded-3xl border border-dashed border-gray-300 p-12 text-center">
+                <p class="text-base font-bold text-gray-800">No communities found</p>
+                <p class="text-sm text-gray-500 mt-1">Try another category or search term.</p>
+                <a href="{% url 'explore' %}" class="mt-4 inline-flex items-center gap-1.5 text-xs font-bold text-brand-600 hover:text-brand-800">
+                    View All Communities &rarr;
+                </a>
+            </div>
+        {% endif %}
+    </div>
+
+</div>
+{% endblock %}

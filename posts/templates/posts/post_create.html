@@ -1,0 +1,166 @@
+{% extends "posts/base.html" %}
+
+{% block title %}New Post &mdash; {{ tenant.name }}{% endblock %}
+
+{% block nav_tenant %}
+    <a href="{% url 'post_list' tenant_id=tenant.id %}"
+       class="text-xs font-bold text-brand-700 bg-brand-50 px-2.5 py-1 rounded-lg">
+        {{ tenant.name }}
+    </a>
+{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto space-y-6">
+
+    <!-- Breadcrumbs -->
+    <nav class="flex items-center gap-2 text-xs font-medium text-gray-400">
+        <a href="{% url 'home' %}" class="hover:text-gray-600 transition-colors">Communities</a>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <a href="{% url 'post_list' tenant_id=tenant.id %}" class="hover:text-gray-600 transition-colors">{{ tenant.name }}</a>
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+        <span class="text-gray-600 font-semibold">New Post</span>
+    </nav>
+
+    <!-- Form card -->
+    <div class="bg-white rounded-3xl border border-gray-200 shadow-xs overflow-hidden">
+
+        <div class="px-6 sm:px-8 py-6 border-b border-gray-100 bg-gray-50/50">
+            <h1 class="text-xl font-bold text-gray-900">Create Community Post</h1>
+            <p class="text-xs text-gray-500 mt-0.5">Publishing to <strong class="text-gray-700">{{ tenant.name }}</strong></p>
+        </div>
+
+        <form method="POST" class="px-6 sm:px-8 py-6 space-y-5" novalidate>
+            {% csrf_token %}
+
+            {% if error %}
+                <div class="rounded-xl bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-700 font-medium">
+                    {{ error }}
+                </div>
+            {% endif %}
+
+            <!-- Title -->
+            <div class="space-y-1.5">
+                <label for="title" class="block text-sm font-semibold text-gray-800">Post Title</label>
+                <input
+                    type="text"
+                    id="title"
+                    name="title"
+                    value="{{ form_title|default:'' }}"
+                    placeholder="Enter an engaging title…"
+                    required
+                    class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                >
+            </div>
+
+            <!-- Category (Smart Auto-detect or Custom) -->
+            <div class="p-4 bg-brand-50/40 rounded-2xl border border-brand-100 space-y-2">
+                <div class="flex items-center justify-between">
+                    <label class="block text-xs font-bold text-brand-900 uppercase tracking-wide">Category</label>
+                    <span class="text-[10px] bg-brand-600 text-white font-bold px-2 py-0.5 rounded">Smart Auto-Detect</span>
+                </div>
+                <input
+                    type="text"
+                    name="custom_category"
+                    value="{{ form_custom_category|default:'' }}"
+                    placeholder="Leave blank to auto-detect from title, or enter custom (e.g. Frontend, Data Science)"
+                    class="w-full px-3.5 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+                {% if existing_categories %}
+                    <div class="flex flex-wrap items-center gap-1.5 pt-1">
+                        <span class="text-[11px] text-gray-400">Suggestions:</span>
+                        {% for cat in existing_categories %}
+                            <button type="button"
+                                onclick="document.getElementsByName('custom_category')[0].value='{{ cat }}'"
+                                class="text-[10px] bg-white hover:bg-brand-100 text-gray-700 px-2 py-0.5 rounded-lg border border-gray-200 transition-colors">
+                                {{ cat }}
+                            </button>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+
+            <!-- Content -->
+            <div class="space-y-1.5">
+                <label for="content" class="block text-sm font-semibold text-gray-800">Content / Story</label>
+                <textarea
+                    id="content"
+                    name="content"
+                    rows="7"
+                    placeholder="Write your tutorial, questions, workout routine, or story here…"
+                    required
+                    class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition resize-y"
+                >{{ form_content|default:'' }}</textarea>
+            </div>
+
+            <!-- Image URL (Optional) -->
+            <div class="space-y-1.5">
+                <label for="image_url" class="block text-sm font-semibold text-gray-800">
+                    Image Link <span class="text-xs font-normal text-gray-400">(Optional)</span>
+                </label>
+                <input
+                    type="url"
+                    id="image_url"
+                    name="image_url"
+                    value="{{ form_image_url|default:'' }}"
+                    placeholder="https://images.unsplash.com/... or direct image link"
+                    class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                >
+            </div>
+
+            <!-- Video URL (Optional) -->
+            <div class="space-y-1.5">
+                <label for="video_url" class="block text-sm font-semibold text-gray-800">
+                    Video Link <span class="text-xs font-normal text-gray-400">(Optional &bull; YouTube Link or Direct MP4)</span>
+                </label>
+                <input
+                    type="url"
+                    id="video_url"
+                    name="video_url"
+                    value="{{ form_video_url|default:'' }}"
+                    placeholder="https://www.youtube.com/watch?v=... or direct MP4 link"
+                    class="w-full px-4 py-2.5 text-sm bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:outline-none focus:ring-2 focus:ring-brand-500 focus:border-brand-500 transition"
+                >
+            </div>
+
+            <!-- Optional Community Poll Builder -->
+            <div class="p-5 bg-brand-50/50 rounded-2xl border border-brand-100 space-y-3">
+                <div class="flex items-center gap-2">
+                    <span class="text-xs bg-brand-600 text-white font-bold px-2 py-0.5 rounded">POLL</span>
+                    <h3 class="text-sm font-bold text-gray-900">Add an Interactive Poll <span class="text-xs font-normal text-gray-500">(Optional)</span></h3>
+                </div>
+
+                <input
+                    type="text"
+                    name="poll_question"
+                    value="{{ form_poll_question|default:'' }}"
+                    placeholder="Ask a question (e.g. Which programming language do you use most?)"
+                    class="w-full px-3.5 py-2 text-xs bg-white border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-brand-500"
+                >
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                    <input type="text" name="poll_option_1" placeholder="Option 1 (e.g. Python)" class="px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl">
+                    <input type="text" name="poll_option_2" placeholder="Option 2 (e.g. TypeScript)" class="px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl">
+                    <input type="text" name="poll_option_3" placeholder="Option 3 (Optional)" class="px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl">
+                    <input type="text" name="poll_option_4" placeholder="Option 4 (Optional)" class="px-3 py-2 text-xs bg-white border border-gray-200 rounded-xl">
+                </div>
+            </div>
+
+            <!-- Actions -->
+            <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                <a href="{% url 'post_list' tenant_id=tenant.id %}"
+                   class="text-sm font-semibold text-gray-500 hover:text-gray-700 transition-colors">
+                    Cancel
+                </a>
+                <button type="submit"
+                    class="inline-flex items-center gap-2 bg-brand-600 hover:bg-brand-700 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-all shadow-xs hover:shadow-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/>
+                    </svg>
+                    Publish Post
+                </button>
+            </div>
+        </form>
+    </div>
+
+</div>
+{% endblock %}
