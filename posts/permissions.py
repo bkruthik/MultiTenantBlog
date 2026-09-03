@@ -16,16 +16,16 @@ def get_membership(user, tenant):
     return Membership.objects.filter(user=user, tenant=tenant).first()
 
 
-def can_create_post(membership):
-    """ADMIN and EDITOR roles can create posts. VIEWER cannot."""
+def can_create_post(membership): #ADMIN and EDITOR roles can create posts. VIEWER cannot.
+    
     return membership is not None and membership.role in ('ADMIN', 'EDITOR')
 
 
-def can_edit_post(membership):
-    """ADMIN and EDITOR roles can edit posts. VIEWER cannot."""
+def can_edit_post(membership): #   ADMIN and EDITOR roles can edit posts. VIEWER cannot.
+
     return membership is not None and membership.role in ('ADMIN', 'EDITOR')
 
 
-def can_delete_post(membership):
-    """Only ADMIN role can delete posts."""
+def can_delete_post(membership): # Only ADMIN role can delete posts.
+ 
     return membership is not None and membership.role == 'ADMIN'
